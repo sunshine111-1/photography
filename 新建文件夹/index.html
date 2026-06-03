@@ -339,13 +339,13 @@ const SERIES={
   gushi:{name:'故事',bg:'bg/bg-gushi.jpg',folder:'故事',photos:[
     '故事/微信图片_20260528113142_1160_15.jpg','故事/微信图片_20260528113149_1161_15.jpg','故事/微信图片_20260528113157_1162_15.jpg','故事/微信图片_20260528113158_1163_15.jpg','故事/微信图片_20260528113206_1164_15.jpg','故事/微信图片_20260528113213_1165_15.jpg','故事/微信图片_20260528113219_1166_15.jpg'
   ]},
-  zhiyu:{name:'治愈',bg:'bg/bg-zhiyu.jpg',folder:'治愈',photos:[
+  zhiyu:{name:'治愈',bg:'bg/bg-zhiyu.png',folder:'治愈',photos:[
     '治愈/微信图片_20260528113058_1151_15.jpg','治愈/微信图片_20260528113103_1152_15.jpg','治愈/微信图片_20260528113109_1153_15.jpg','治愈/微信图片_20260528113113_1154_15.jpg','治愈/微信图片_20260528113119_1155_15.jpg','治愈/微信图片_20260528113126_1156_15.jpg','治愈/微信图片_20260528113131_1157_15.jpg','治愈/微信图片_20260528113135_1158_15.jpg','治愈/微信图片_20260528113140_1159_15.jpg'
   ]},
   huoli:{name:'活力',bg:'bg/bg-huoli.jpg',folder:'活力',photos:[
     '活力/微信图片_20260528104733_1917_8.jpg','活力/微信图片_20260528104735_1918_8.jpg','活力/微信图片_20260528104736_1919_8.jpg','活力/微信图片_20260528104738_1920_8.jpg','活力/微信图片_20260528104740_1921_8.jpg','活力/微信图片_20260528104741_1922_8.jpg','活力/微信图片_20260528104743_1923_8.jpg','活力/微信图片_20260528104744_1924_8.jpg','活力/微信图片_20260528104746_1925_8.jpg'
   ]},
-  qingleng:{name:'清冷',bg:'bg/bg-qingleng.jpg',folder:'清冷',photos:[
+  qingleng:{name:'清冷',bg:'bg/bg-qingleng.png',folder:'清冷',photos:[
     '清冷/微信图片_20260528113358_1176_15.jpg','清冷/微信图片_20260528113401_1177_15.jpg','清冷/微信图片_20260528113406_1178_15.jpg','清冷/微信图片_20260528113417_1181_15.jpg','清冷/微信图片_20260528113421_1182_15.jpg','清冷/微信图片_20260528113425_1183_15.jpg','清冷/微信图片_20260528113429_1184_15.jpg','清冷/微信图片_20260528113433_1185_15.jpg','清冷/微信图片_20260528113444_1188_15.jpg','清冷/微信图片_20260528113452_1191_15.jpg','清冷/微信图片_20260528113455_1192_15.jpg'
   ]},
   lixu:{name:'离绪',bg:'bg/bg-lixu.jpg',folder:'离绪',photos:[
@@ -553,6 +553,7 @@ class GalleryApp{
     window.addEventListener('touchstart',this._onTouchDown);
     window.addEventListener('touchmove',this._onTouchMove);
     window.addEventListener('touchend',this._onTouchUp);
+    // Lightbox controls
     document.getElementById('lbClose').addEventListener('click',()=>this._closeLightbox());
     document.getElementById('lbPrev').addEventListener('click',e=>{e.stopPropagation();this._lbNavigate(-1)});
     document.getElementById('lbNext').addEventListener('click',e=>{e.stopPropagation();this._lbNavigate(1)});
