@@ -72,7 +72,7 @@
   .l3-series-name{font-family:'Cormorant Garamond',serif;font-size:clamp(1.2rem,2.5vw,1.8rem);font-weight:300;letter-spacing:0.15em;color:var(--text)}
   .l3-counter{font-size:0.6rem;letter-spacing:0.3em;color:var(--text2)}
   .l3-gallery-wrap{position:relative;z-index:2;width:100%;max-width:1200px;height:clamp(400px,60vh,600px);margin-top:clamp(20px,4vh,40px);padding:0 clamp(20px,4vw,48px)}
-  .l3-gallery{width:100%;height:100%;overflow:hidden;cursor:pointer;border-radius:12px}
+  .l3-gallery{width:100%;height:100%;overflow:hidden;cursor:pointer;border-radius:12px;touch-action:pan-x}
   .l3-gallery:active{cursor:grabbing}
   .l3-gallery canvas{display:block;border-radius:12px}
 
@@ -114,9 +114,28 @@
     .lb-nav.prev{left:8px}
     .lb-nav.next{right:8px}
   }
+  @media(max-width:768px) and (orientation:portrait){
+    .l1-title{font-size:clamp(2.8rem,8vw,4.5rem)}
+    .l1-sub{font-size:0.6rem;letter-spacing:0.3em}
+    .l1-btn{padding:12px 36px;font-size:0.7rem}
+    .l2-grid{gap:10px}
+    .l2-card{min-height:100px;aspect-ratio:auto;height:120px}
+    .l3-gallery-wrap{height:clamp(180px,35vh,280px)}
+    .l3-topbar{padding:12px 16px}
+    .l3-back{padding:6px 14px;font-size:0.65rem}
+    .l3-series-name{font-size:1rem}
+    .l3-hint{font-size:0.55rem;margin-top:8px}
+    .lb-nav{width:40px;height:40px}
+    .lb-nav.prev{left:8px}
+    .lb-nav.next{right:8px}
+    .lb-close{top:16px;right:16px}
+    #layer3::after{background:rgba(0,0,0,0.55)}
+  }
   @media(max-width:480px){
     .l2-row-top,.l2-row-bottom{grid-template-columns:repeat(2,1fr)}
     .l2-row-bottom .l2-card:last-child{grid-column:span 2;max-width:50%;margin:0 auto}
+    .l2-card{min-height:80px;height:100px}
+    .l2-card-name{font-size:clamp(1rem,2.5vw,1.4rem)}
     .l3-gallery-wrap{height:clamp(220px,40vh,320px)}
   }
 </style>
@@ -191,19 +210,26 @@
 
 <!-- Osmanthus Particles -->
 <script>
+const isTouchDevice='ontouchstart' in window||navigator.maxTouchPoints>0;
 (function(){
+  const debounce=(fn,ms)=>{let t;return function(...a){clearTimeout(t);t=setTimeout(()=>fn.apply(this,a),ms)}};
   const canvas = document.getElementById('osmanthus-canvas');
   const ctx = canvas.getContext('2d');
   let W,H, mouseX=-200, mouseY=-200, mouseOnScreen=false;
   const particles = [];
-  const MAX = 80;
+  const MAX = isTouchDevice?25:60;
   let lastSpawn = 0;
 
   function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight}
-  window.addEventListener('resize',resize);resize();
+  window.addEventListener('resize',debounce(resize,150));resize();
 
   document.addEventListener('mousemove',e=>{mouseX=e.clientX;mouseY=e.clientY;mouseOnScreen=true});
   document.addEventListener('mouseleave',()=>{mouseOnScreen=false});
+  if(isTouchDevice){
+    document.addEventListener('touchmove',e=>{e.preventDefault();mouseX=e.touches[0].clientX;mouseY=e.touches[0].clientY;mouseOnScreen=true});
+    document.addEventListener('touchstart',e=>{mouseX=e.touches[0].clientX;mouseY=e.touches[0].clientY;mouseOnScreen=true});
+    document.addEventListener('touchend',()=>{mouseOnScreen=false});
+  }
 
   function drawOsmanthus(ctx,x,y,s,rot,alpha,color){
     ctx.save();
@@ -248,7 +274,7 @@
     ctx.clearRect(0,0,W,H);
 
     // Spawn
-    if(mouseOnScreen && time-lastSpawn > 80+Math.random()*40){
+    if(mouseOnScreen && time-lastSpawn > (isTouchDevice?200:120)+Math.random()*60){
       spawn(mouseX+ (Math.random()-0.5)*20, mouseY+ (Math.random()-0.5)*20);
       lastSpawn=time;
     }
@@ -325,7 +351,7 @@ const SERIES={
   lixu:{name:'离绪',bg:'bg/bg-lixu.jpg',folder:'离绪',photos:[
     '离绪/微信图片_20260528111110_1117_15.jpg','离绪/微信图片_20260528111118_1118_15.jpg','离绪/微信图片_20260528111126_1119_15.jpg','离绪/微信图片_20260528111134_1120_15.jpg','离绪/微信图片_20260528111407_1121_15.jpg'
   ]},
-  duanzhuang:{name:'端庄',bg:null,folder:'端庄',photos:[
+  duanzhuang:{name:'端庄',bg:'bg/bg-duanzhuang.jpg',folder:'端庄',photos:[
     '端庄/微信图片_20260528105131_1926_8.jpg','端庄/微信图片_20260528105142_1927_8.jpg','端庄/微信图片_20260528105148_1928_8.jpg','端庄/微信图片_20260528105159_1930_8.jpg','端庄/微信图片_20260528105426_1931_8.jpg','端庄/微信图片_20260528105433_1932_8.jpg','端庄/微信图片_20260528105441_1933_8.jpg','端庄/微信图片_20260528110226_1934_8.jpg','端庄/微信图片_20260528110236_1935_8.jpg','端庄/微信图片_20260528113048_1148_15.jpg'
   ]}
 };
@@ -344,28 +370,21 @@ class Media{
     this.createShader();
   }
   createShader(){
-    const img=new Image();img.crossOrigin='anonymous';img.src=this.image;
+    const img=new Image();if(location.protocol!=='file:')img.crossOrigin='anonymous';img.src=this.image;
     img.onload=()=>{
-      const maxSize=Math.min(this.gl.getParameter(this.gl.MAX_TEXTURE_SIZE),2048);
-      let w=img.naturalWidth,h=img.naturalHeight;
-      if(w>maxSize||h>maxSize){const r=Math.min(maxSize/w,maxSize/h);w=Math.floor(w*r);h=Math.floor(h*r)}
-      const c=document.createElement('canvas');c.width=w;c.height=h;
-      const cx=c.getContext('2d');cx.drawImage(img,0,0,w,h);
-      const cleanImg=new Image();
-      cleanImg.onload=()=>{
-        this.texture=new Texture(this.gl,{image:cleanImg,generateMipmaps:false});
-        this.program=new Program(this.gl,{
-          depthTest:false,depthWrite:false,
-          vertex:`precision highp float;attribute vec3 position;attribute vec2 uv;uniform mat4 modelViewMatrix;uniform mat4 projectionMatrix;uniform float uTime;uniform float uSpeed;varying vec2 vUv;void main(){vUv=uv;vec3 p=position;p.z=(sin(p.x*4.0+uTime)*1.5+cos(p.y*2.0+uTime)*1.5)*(0.1+uSpeed*0.5);gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);}`,
-          fragment:`precision highp float;uniform vec2 uImageSizes;uniform vec2 uPlaneSizes;uniform sampler2D tMap;uniform float uBorderRadius;varying vec2 vUv;float roundedBoxSDF(vec2 p,vec2 b,float r){vec2 d=abs(p)-b;return length(max(d,vec2(0.0)))+min(max(d.x,d.y),0.0)-r;}void main(){vec2 ratio=vec2(min((uPlaneSizes.x/uPlaneSizes.y)/(uImageSizes.x/uImageSizes.y),1.0),min((uPlaneSizes.y/uPlaneSizes.x)/(uImageSizes.y/uImageSizes.x),1.0));vec2 uv=vec2(vUv.x*ratio.x+(1.0-ratio.x)*0.5,vUv.y*ratio.y+(1.0-ratio.y)*0.5);vec4 color=texture2D(tMap,uv);float d=roundedBoxSDF(vUv-0.5,vec2(0.5-uBorderRadius),uBorderRadius);float alpha=1.0-smoothstep(-0.002,0.002,d);gl_FragColor=vec4(color.rgb,alpha);}`,
-          uniforms:{tMap:{value:this.texture},uPlaneSizes:{value:[0,0]},uImageSizes:{value:[img.naturalWidth,img.naturalHeight]},uSpeed:{value:0},uTime:{value:100*Math.random()},uBorderRadius:{value:this.borderRadius}},
-          transparent:true
-        });
-        this.createMesh();
-        this.onResize();
-        this.ready=true;
-      };
-      cleanImg.src=c.toDataURL('image/jpeg',0.92);
+      // Use the image element directly as WebGL texture — avoids tainted-canvas SecurityError
+      // on file:// protocol. OGL's Texture accepts HTMLImageElement natively.
+      this.texture=new Texture(this.gl,{image:img,generateMipmaps:false});
+      this.program=new Program(this.gl,{
+        depthTest:false,depthWrite:false,
+        vertex:`precision highp float;attribute vec3 position;attribute vec2 uv;uniform mat4 modelViewMatrix;uniform mat4 projectionMatrix;uniform float uTime;uniform float uSpeed;varying vec2 vUv;void main(){vUv=uv;vec3 p=position;p.z=(sin(p.x*4.0+uTime)*1.5+cos(p.y*2.0+uTime)*1.5)*(0.1+uSpeed*0.5);gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);}`,
+        fragment:`precision highp float;uniform vec2 uImageSizes;uniform vec2 uPlaneSizes;uniform sampler2D tMap;uniform float uBorderRadius;varying vec2 vUv;float roundedBoxSDF(vec2 p,vec2 b,float r){vec2 d=abs(p)-b;return length(max(d,vec2(0.0)))+min(max(d.x,d.y),0.0)-r;}void main(){vec2 ratio=vec2(min((uPlaneSizes.x/uPlaneSizes.y)/(uImageSizes.x/uImageSizes.y),1.0),min((uPlaneSizes.y/uPlaneSizes.x)/(uImageSizes.y/uImageSizes.x),1.0));vec2 uv=vec2(vUv.x*ratio.x+(1.0-ratio.x)*0.5,vUv.y*ratio.y+(1.0-ratio.y)*0.5);vec4 color=texture2D(tMap,uv);float d=roundedBoxSDF(vUv-0.5,vec2(0.5-uBorderRadius),uBorderRadius);float alpha=1.0-smoothstep(-0.002,0.002,d);gl_FragColor=vec4(color.rgb,alpha);}`,
+        uniforms:{tMap:{value:this.texture},uPlaneSizes:{value:[0,0]},uImageSizes:{value:[img.naturalWidth,img.naturalHeight]},uSpeed:{value:0},uTime:{value:100*Math.random()},uBorderRadius:{value:this.borderRadius}},
+        transparent:true
+      });
+      this.createMesh();
+      this.onResize();
+      this.ready=true;
     };
     img.onerror=()=>{this.ready=true;};
   }
@@ -417,13 +436,13 @@ class GalleryApp{
     this.update();this.addEventListeners();
   }
   createRenderer(){
-    this.renderer=new Renderer({alpha:true,antialias:true,dpr:Math.min(window.devicePixelRatio||1,2)});
+    this.renderer=new Renderer({alpha:true,antialias:true,dpr:Math.min(window.devicePixelRatio||1,1.5)});
     this.gl=this.renderer.gl;this.gl.clearColor(0,0,0,0);
     this.container.appendChild(this.gl.canvas);
   }
   createCamera(){this.camera=new Camera(this.gl);this.camera.fov=45;this.camera.position.z=20}
   createScene(){this.scene=new Transform()}
-  createGeometry(){this.planeGeometry=new Plane(this.gl,{heightSegments:50,widthSegments:100})}
+  createGeometry(){this.planeGeometry=new Plane(this.gl,{heightSegments:30,widthSegments:80})}
   createMedias(){
     const items=this.photos.map(p=>({image:p,text:''}));
     this.mediasImages=items.concat(items);
@@ -434,6 +453,7 @@ class GalleryApp{
     }));
   }
   onTouchDown(e){
+    if(e.touches)e.preventDefault();
     if(this.lightboxOpen){this._closeLightbox();return}
     this.isDown=true;this._wasClick=true;
     this._clickStartX=e.touches?e.touches[0].clientX:e.clientX;
@@ -443,6 +463,7 @@ class GalleryApp{
   }
   onTouchMove(e){
     if(!this.isDown)return;
+    if(e.touches)e.preventDefault();
     const x=e.touches?e.touches[0].clientX:e.clientX;
     const y=e.touches?e.touches[0].clientY:e.clientY;
     if(Math.abs(x-this._clickStartX)>8||Math.abs(y-this._clickStartY)>8)this._wasClick=false;
@@ -567,7 +588,7 @@ class GalleryApp{
 // ── Open Series ──
 window.openSeries=function(key){
   const s=SERIES[key];if(!s)return;
-  window.setMouseEffect(key==='duanzhuang'?null:key);
+  window.setMouseEffect(key);
   // Update layer 3 background
   const l3=document.getElementById('layer3');
   if(s.bg)l3.style.backgroundImage=`url('${s.bg}')`;
@@ -583,15 +604,63 @@ window.openSeries=function(key){
   goToLayer3();
   // Small delay to let DOM settle
   setTimeout(()=>{
-    window._galleryApp=new GalleryApp(container,s.photos);
+    try{
+      window._galleryApp=new GalleryApp(container,s.photos);
+    }catch(e){
+      console.warn('WebGL gallery failed:',e);
+      window._galleryApp=null;
+    }
+    // Fallback: if no canvas after 2s, show CSS gallery
+    setTimeout(()=>{
+      const canvas=container.querySelector('canvas');
+      if(!canvas||canvas.width===0||canvas.height===0){
+        showCssFallback(container,s.photos,s.name);
+      }
+    },2000);
   },300);
 };
+
+// CSS fallback when WebGL fails
+function showCssFallback(container,photos,name){
+  if(window._cssFallbackActive)return;
+  window._cssFallbackActive=true;
+  container.innerHTML='';
+  container.style.cssText='position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;';
+  let idx=0;
+  const img=document.createElement('img');
+  img.style.cssText='max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;transition:opacity .4s;';
+  container.appendChild(img);
+  function show(i){
+    idx=((i%photos.length)+photos.length)%photos.length;
+    img.src=photos[idx];
+    document.getElementById('l3Counter').textContent=(idx+1)+' / '+photos.length;
+  }
+  img.onload=()=>{img.style.opacity='1'};
+  show(0);
+  // Navigation
+  const prevBtn=document.createElement('button');
+  prevBtn.textContent='‹';prevBtn.style.cssText='position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.5);color:#fff;border:none;font-size:2rem;width:44px;height:44px;border-radius:50%;cursor:pointer;z-index:10;line-height:1;';
+  const nextBtn=document.createElement('button');
+  nextBtn.textContent='›';nextBtn.style.cssText='position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.5);color:#fff;border:none;font-size:2rem;width:44px;height:44px;border-radius:50%;cursor:pointer;z-index:10;line-height:1;';
+  container.appendChild(prevBtn);container.appendChild(nextBtn);
+  prevBtn.onclick=(e)=>{e.stopPropagation();img.style.opacity='0';setTimeout(()=>show(idx-1),200)};
+  nextBtn.onclick=(e)=>{e.stopPropagation();img.style.opacity='0';setTimeout(()=>show(idx+1),200)};
+  container.onclick=(e)=>{if(e.target===container){img.style.opacity='0';setTimeout(()=>show(idx+1),200)}};
+  // Keyboard
+  const handler=(e)=>{if(e.key==='ArrowLeft'){img.style.opacity='0';setTimeout(()=>show(idx-1),200)}else if(e.key==='ArrowRight'){img.style.opacity='0';setTimeout(()=>show(idx+1),200)}};
+  document.addEventListener('keydown',handler);
+  container._keyHandler=handler;
+  // Cleanup on destroy
+  const origDestroy=window._galleryApp?window._galleryApp.destroy.bind(window._galleryApp):null;
+  window._galleryApp={destroy(){document.removeEventListener('keydown',handler);container.innerHTML='';window._cssFallbackActive=false;}};
+}
 
 // ── Init ──
 window.addEventListener('DOMContentLoaded',()=>{
   // Preload first series images for better initial experience
   const firstSeries=SERIES['lengsha'];
-  firstSeries.photos.forEach(src=>{const img=new Image();img.src=src});
+  const limit = isTouchDevice ? 3 : firstSeries.photos.length;
+  firstSeries.photos.slice(0, limit).forEach(src => { const img = new Image(); img.src = src; });
 });
 // Set initial effect
 window.setMouseEffect('lengsha');
@@ -603,7 +672,8 @@ window.setMouseEffect('lengsha');
   const canvas=document.getElementById('mouse-effect-canvas');
   const ctx=canvas.getContext('2d');
   let W,H,mx=-100,my=-100,pmx=-100,pmy=-100,moving=false,speed=0,stillTimeout,effect=null;
-  const meteors=[],dust=[],rain=[],bubbles=[],trail=[];
+  const meteors=[],dust=[],rain=[],bubbles=[],petals=[],trail=[];
+  let lastMoveTs=0,stillDelay=60;
 
   function resize(){
     const r=canvas.parentElement.getBoundingClientRect();
@@ -726,6 +796,66 @@ window.setMouseEffect('lengsha');
     while(trail.length>30)trail.shift();
   }
 
+  // ── 端庄: 金桂花瓣 ──
+  function spawnOsmanthus(){
+    const isDark = effect==='lixu'||effect==='qingleng';
+    const baseAlpha = isDark ? 0.25 : 0.35;
+    const count = speed < 5 ? 4+Math.floor(Math.random()*4) : 2+Math.floor(Math.random()*3);
+    const now = Date.now();
+    if(now-lastMoveTs>3000) return; // 静止>3秒不生成
+    for(let i=0;i<count&&petals.length<70;i++){
+      const size = 6+Math.random()*8;
+      const a = Math.atan2(my-pmy,mx-pmx)+(Math.random()-0.5)*0.5;
+      const v = 0.5+speed*0.1;
+      const cluster = Math.random()<0.3;
+      petals.push({
+        x:mx+(Math.random()-0.5)*12,y:my+(Math.random()-0.5)*12,
+        vx:Math.cos(a)*v,vy:Math.sin(a)*v,
+        size,life:1,decay:0.0048+Math.random()*0.0028,
+        rot:Math.random()*Math.PI*2,rotSpeed:(Math.random()-0.5)*0.02,
+        drift:(Math.random()-0.5)*0.1,alpha:baseAlpha+Math.random()*0.1,
+        cluster,clusterSize:cluster?2+Math.floor(Math.random()*3):1
+      });
+    }
+  }
+  function updateOsmanthus(){
+    for(let i=petals.length-1;i>=0;i--){
+      const p=petals[i];
+      p.x+=p.vx+p.drift;p.y+=p.vy+0.1;p.rot+=p.rotSpeed;
+      p.vx*=0.99;p.vy*=0.99;p.life-=p.decay;
+      if(p.life<=0){petals.splice(i,1);continue}
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);
+      const a=p.alpha*p.life;
+      if(p.cluster){
+        const r=p.size*0.5;
+        for(let j=0;j<p.clusterSize;j++){
+          const ang=j*(2*Math.PI/p.clusterSize);
+          const dx=Math.cos(ang)*r,dy=Math.sin(ang)*r;
+          drawPetal(dx,dy,p.size*0.7,a);
+        }
+      }else{
+        drawPetal(0,0,p.size,a);
+      }
+      ctx.restore();
+    }
+  }
+  function drawPetal(x,y,size,alpha){
+    const r=size*0.5;
+    for(let i=0;i<4;i++){
+      const a=i*Math.PI/2;
+      const px=x+Math.cos(a)*r*0.45;
+      const py=y+Math.sin(a)*r*0.45;
+      const grd=ctx.createRadialGradient(px,py,0,px,py,r*0.42);
+      grd.addColorStop(0,`rgba(255,240,195,${alpha*0.85})`);
+      grd.addColorStop(0.6,`rgba(245,220,150,${alpha*0.55})`);
+      grd.addColorStop(1,`rgba(190,155,105,${alpha*0.05})`);
+      ctx.fillStyle=grd;ctx.beginPath();
+      ctx.ellipse(px,py,r*0.28,r*0.44,a,0,Math.PI*2);ctx.fill();
+    }
+    ctx.fillStyle=`rgba(195,155,85,${alpha*0.5})`;ctx.beginPath();
+    ctx.arc(x,y,r*0.12,0,Math.PI*2);ctx.fill();
+  }
+
   // ── Main loop ──
   function animate(){
     ctx.clearRect(0,0,W,H);
@@ -737,17 +867,18 @@ window.setMouseEffect('lengsha');
       case 'huoli':if(moving)spawnBubbles(speed>10?1:speed>5?2:3);updateBubbles();break;
       case 'qingleng':updateGlow();break;
       case 'lixu':updateMist();break;
+      case 'duanzhuang':if(moving)spawnOsmanthus();updateOsmanthus();break;
     }
     requestAnimationFrame(animate);
   }
 
   document.addEventListener('mousemove',function(e){
     pmx=mx;pmy=my;mx=e.clientX;my=e.clientY;
-    speed=Math.hypot(mx-pmx,my-pmy);moving=true;
-    clearTimeout(stillTimeout);stillTimeout=setTimeout(function(){moving=false},60);
+    speed=Math.hypot(mx-pmx,my-pmy);moving=true;lastMoveTs=Date.now();
+    clearTimeout(stillTimeout);stillTimeout=setTimeout(function(){moving=false},stillDelay);
   });
 
-  window.setMouseEffect=function(e){effect=e;trail.length=0};
+  window.setMouseEffect=function(e){if(isTouchDevice)return;effect=e;trail.length=0;petals.length=0;stillDelay=e==='duanzhuang'?3000:60;resize()};
   resize();window.addEventListener('resize',resize);
   requestAnimationFrame(animate);
 })();
